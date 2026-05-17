@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>听歌识曲 - SearchByVoice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <div class="bg-white shadow-sm sticky top-0 z-50">
+            <div class="max-w-2xl mx-auto px-4 py-4 sm:py-6">
+                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-900">🎵 听歌识曲</h1>
+                <p class="text-center text-sm text-gray-500 mt-1">SearchByVoice</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 max-w-2xl mx-auto w-full px-4 py-6 sm:py-8">
+            <!-- Action Buttons -->
+            <div class="space-y-4 mb-8">
+                <!-- Record Button -->
+                <button id="recordBtn" class="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all duration-200 transform hover:shadow-xl flex items-center justify-center gap-3 text-lg">
+                    <span>🎤</span>
+                    <span>开始录音识曲</span>
+                </button>
+
+                <!-- Upload Button -->
+                <button id="uploadBtn" class="w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all duration-200 transform hover:shadow-xl flex items-center justify-center gap-3 text-lg">
+                    <span>📁</span>
+                    <span>上传音频文件</span>
+                </button>
+
+                <!-- Hidden File Input -->
+                <input id="fileInput" type="file" accept="audio/*" class="hidden" />
+            </div>
+
+            <!-- Recording Status -->
+            <div id="recordingStatus" class="hidden bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="animate-pulse flex space-x-1">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-blue-500 rounded-full animation-delay-200"></div>
+                        <div class="w-2 h-2 bg-blue-500 rounded-full animation-delay-400"></div>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-blue-900">正在录音...</p>
+                        <p class="text-sm text-blue-700" id="recordingTime">00:00</p>
+                    </div>
+                </div>
+                <button id="stopBtn" class="mt-3 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    停止录音
+                </button>
+                <!-- Waveform Visualization -->
+                <canvas id="waveform" class="w-full h-20 mt-3 bg-white rounded-lg"></canvas>
+            </div>
+
+            <!-- Processing Status -->
+            <div id="processingStatus" class="hidden bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="animate-spin inline-block w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full"></div>
+                    <div>
+                        <p class="font-semibold text-yellow-900">正在识别...</p>
+                        <p class="text-sm text-yellow-700">提取音频指纹中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-8">
+                <p class="font-semibold text-red-900" id="errorText">发生错误</p>
+                <p class="text-sm text-red-700 mt-1" id="errorDetail"></p>
+            </div>
+
+            <!-- Success Result -->
+            <div id="resultCard" class="hidden bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+                <div id="coverContainer" class="relative">
+                    <img id="coverImage" src="" alt="Cover" class="w-full aspect-square object-cover" />
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/30"></div>
+                </div>
+
+                <div class="p-6 space-y-3">
+                    <div>
+                        <h2 id="songTitle" class="text-2xl font-bold text-gray-900 mb-1"></h2>
+                        <p id="songArtist" class="text-lg text-gray-600"></p>
+                    </div>
+
+                    <div class="text-sm text-gray-500 space-y-1">
+                        <p id="songAlbum"></p>
+                        <p id="releaseDate"></p>
+                        <p id="acoustidScore" class="text-blue-600 font-semibold"></p>
+                    </div>
+                </div>
+
+                <div id="lyricsSection" class="hidden px-6 py-4 bg-gray-50 border-t">
+                    <h3 class="font-semibold text-gray-900 mb-3">歌词</h3>
+                    <div id="lyricsContent" class="text-sm text-gray-700 max-h-40 overflow-y-auto whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 p-6 border-t bg-gray-50">
+                    <a id="spotifyLink" href="#" target="_blank" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg text-center text-sm transition-colors">
+                        🎵 Spotify
+                    </a>
+                    <a id="youtubeLink" href="#" target="_blank" class="hidden bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-center text-sm transition-colors">
+                        📺 YouTube
+                    </a>
+                    <button id="shareBtn" class="col-span-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                        📤 分享结果
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recommendations (No Match) -->
+            <div id="recommendationsCard" class="hidden bg-white rounded-2xl shadow-lg p-6 mb-8">
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">😕 未能识别歌曲</h2>
+                    <p class="text-gray-600">但我们为您找到了这些相似的歌曲：</p>
+                </div>
+
+                <div id="recommendationsList" class="space-y-3"></div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-200">
+                <h3 class="font-bold text-blue-900 mb-3">💡 使用提示</h3>
+                <ul class="text-sm text-blue-800 space-y-2">
+                    <li>✓ 录音时间越长识别准确率越高（建议10秒以上）</li>
+                    <li>✓ 背景噪音越少越容易识别</li>
+                    <li>✓ 支持上传 MP3、WAV、FLAC、M4A 等常见音频格式</li>
+                    <li>✓ 单个文件大小不超过 10MB</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-100 border-t mt-8">
+            <div class="max-w-2xl mx-auto px-4 py-6 text-center text-sm text-gray-600">
+                <p>SearchByVoice v1.0</p>
+                <p class="mt-1">Powered by AcoustID & MusicBrainz</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/recorder.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
