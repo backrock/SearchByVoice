@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: searchbyvoice-backend
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+      MAX_FILE_SIZE: 10485760
+      AUDIO_QUALITY: 128
+      TEMP_DIR: /app/tmp
+      ACOUSTID_API_KEY: ${ACOUSTID_API_KEY:-your-api-key-here}
+      ACOUSTID_CLIENT_ID: ${ACOUSTID_CLIENT_ID:-searchbyvoice}
+      ACOUSTID_ENDPOINT: https://api.acoustid.org/v2
+      MUSICBRAINZ_ENDPOINT: https://musicbrainz.org/ws/2
+      MUSICBRAINZ_USER_AGENT: SearchByVoice/1.0
+      LOG_LEVEL: info
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - searchbyvoice-network
+
+  frontend:
+    image: nginx:alpine
+    container_name: searchbyvoice-frontend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - searchbyvoice-network
+
+networks:
+  searchbyvoice-network:
+    driver: bridge
